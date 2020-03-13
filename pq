@@ -8,6 +8,54 @@ Query package versions
 import json
 import urllib2
 
+
+def main():
+    """
+    Fetch and prepare packages data for user to query.
+
+    User may make repeated queries.
+    """
+    print "Fetching packages....."
+    url = 'https://dev-dashboard.conductortech.com/api/v1/ee/packages'
+    content = urllib2.urlopen(url).read()
+    packages = json.loads(content)["data"]
+
+    product_obj = {}
+    for package in packages:
+        product = package["product"]
+        if product not in product_obj:
+            product_obj[product] = []
+
+        version = get_version_string(package)
+
+        product_obj[product].append(version)
+
+    for product in product_obj:
+        product_obj[product] = sorted(list(set(product_obj[product])))
+
+    product_list = ["all"]
+    for p in sorted(product_obj.keys()):
+        product_list.append(p)
+
+    while True:
+        run(product_list, product_obj)
+        go = raw_input("Make another query? (y/n): ")
+        if go.lower().startswith("n"):
+            exit(0)
+
+
+def get_version_string(package):
+    """"""
+    major = package["major_version"]
+    minor = package["minor_version"]
+    release = package["release_version"]
+    build = package["build_version"]
+
+    return ".".join(
+        [v for v in [major, minor, release, build] if v != ""]
+    )
+
+
 def run(product_list, product_obj):
     """
     Allow user to choose a product to print versions for.
@@ -20,9 +68,12 @@ def run(product_list, product_obj):
 
     num_products = len(product_list)
     range_str = "(0..{:d})".format(num_products-1)
-    choice = int(input(
-        "Enter the number of the package you want version info for {}: ".format(range_str)))
+    choice = raw_input(
+        "Enter the number of the package you want version info for {}: ".format(range_str))
 
+    if str(choice).lower() == "q":
+        exit(0)
+    choice = int(choice)
     while choice not in range(len(product_list)):
         choice = int(
             raw_input("Invalid choice, try again {}:".format(range_str)))
@@ -40,43 +91,5 @@ def run(product_list, product_obj):
             print ver
         print ""
 
-
-def main():
-    """
-    Fetch and prepare packages data for user to query.
-
-    User may make repeated queries. 
-    """
-
-    url = 'https://dev-dashboard.conductortech.com/api/v1/ee/packages'
-    content = urllib2.urlopen(url).read()
-    packages = json.loads(content)["data"]
-
-    product_obj = {}
-    for package in packages:
-        product = package["product"]
-        if product not in product_obj:
-            product_obj[product] = []
-        version = ".".join(
-            [v for v in [
-                package["major_version"],
-                package["minor_version"],
-                package["release_version"],
-                package["build_version"]] if v != ""]
-        )
-        product_obj[product].append(version)
-
-    for product in product_obj:
-        product_obj[product] = sorted(list(set(product_obj[product])))
-
-    product_list = ["all"]
-    for p in sorted(product_obj.keys()):
-        product_list.append(p)
-
-    while True:
-        run(product_list, product_obj)
-        go = raw_input("Make another query? (y/n): ")
-        if go.lower().startswith("n"):
-            exit(0)
 
 main()
