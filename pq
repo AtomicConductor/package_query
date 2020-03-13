@@ -16,7 +16,7 @@ def main():
     User may make repeated queries.
     """
     print "Fetching packages....."
-    url = 'https://dev-dashboard.conductortech.com/api/v1/ee/packages'
+    url = 'https://dashboard.conductortech.com/api/v1/ee/packages'
     content = urllib2.urlopen(url).read()
     packages = json.loads(content)["data"]
 
